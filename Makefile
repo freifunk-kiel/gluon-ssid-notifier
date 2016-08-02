@@ -1,16 +1,16 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=gluon-ssid-changer
+PKG_NAME:=gluon-ssid-notifier
 PKG_VERSION:=1
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/gluon-ssid-changer
+define Package/gluon-ssid-notifier
   SECTION:=gluon
   CATEGORY:=Gluon
-  TITLE:=SSID Changer
+  TITLE:=Adds an extra SSID to notify if a node is offline
   DEPENDS:=+gluon-core +micrond
 endef
 
@@ -24,9 +24,9 @@ endef
 define Build/Compile
 endef
 
-define Package/gluon-ssid-changer/install
+define Package/gluon-ssid-notifier/install
         $(CP) ./files/* $(1)/
 endef
 
-$(eval $(call BuildPackage,gluon-ssid-changer))
+$(eval $(call BuildPackage,gluon-ssid-notifier))
 
