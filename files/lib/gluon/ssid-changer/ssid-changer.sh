@@ -4,10 +4,10 @@
 
 ONLINE_SSID=$(uci get wireless.client_radio0.ssid -q)
 : ${ONLINE_SSID:=FREIFUNK}   # if for whatever reason ONLINE_SSID is NULL
-OFFLINE_PREFIX='FF_OFFLINE_' # Use something short to leave space for the nodename
+OFFLINE_PREFIX='FF kein Netz:' # Use something short to leave space for the nodename
 
-UPPER_LIMIT='55' # Above this limit the online SSID will be used
-LOWER_LIMIT='45' # Below this limit the offline SSID will be used
+UPPER_LIMIT='55' # Above this limit the offline SSID will be off
+LOWER_LIMIT='45' # Below this limit the offline SSID will be on
 # In-between these two values the SSID will never be changed to preven it from toggeling every Minute.
 
 # Generate an Offline SSID with the first and last Part of the nodename to allow owner to recognise wich node is down
@@ -15,7 +15,7 @@ NODENAME=`uname -n`
 if [ ${#NODENAME} -gt $((30 - ${#OFFLINE_PREFIX})) ] ; then # 32 would be possible as well
 	HALF=$(( (28 - ${#OFFLINE_PREFIX} ) / 2 )) # calculate the length of the first part of the node identifier in the offline-ssid
 	SKIP=$(( ${#NODENAME} - $HALF )) # jump to this charakter for the last part of the name
-	OFFLINE_SSID=$OFFLINE_PREFIX${NODENAME:0:$HALF}...${NODENAME:$SKIP:${#NODENAME}} # use the first and last part of the nodename for nodes with long name
+	OFFLINE_SSID="$OFFLINE_PREFIX${NODENAME:0:$HALF}..${NODENAME:$SKIP:${#NODENAME}}" # use the first and last part of the nodename for nodes with long name
 else
 	OFFLINE_SSID="$OFFLINE_PREFIX$NODENAME" # great! we are able to use the full nodename in the offline ssid
 fi
@@ -30,48 +30,28 @@ fi
 
 if [ $GATEWAY_TQ -gt $UPPER_LIMIT ];
 then
-	echo "Gateway TQ is $GATEWAY_TQ node is online"
-	for HOSTAPD in $(ls /var/run/hostapd-phy*); do # check status for all physical devices
-		CURRENT_SSID=`grep "^ssid=$ONLINE_SSID" $HOSTAPD | cut -d"=" -f2`
-		if [ "X$CURRENT_SSID" == "X$ONLINE_SSID" ]
-		then
-			echo "SSID $CURRENT_SSID is correct, noting to do"
-			HUP_NEEDED=0
-			break
-		fi
-		CURRENT_SSID=`grep "^ssid=$OFFLINE_SSID" $HOSTAPD | cut -d"=" -f2`
-		if [ "X$CURRENT_SSID" == "X$OFFLINE_SSID" ]
-		then
-			logger -s -t "gluon-offline-ssid" -p 5 "TQ is $GATEWAY_TQ, SSID is $CURRENT_SSID, change to $ONLINE_SSID" # write Info to Syslog
-			sed -i "s~^ssid=$CURRENT_SSID~ssid=$ONLINE_SSID~" $HOSTAPD
-			HUP_NEEDED=1 # HUP here would be to early for dualband devices
-		else
-			echo "There is something wrong, did not find SSID $ONLINE_SSID or $OFFLINE_SSID"
-		fi
-	done
+	logger -s -t "gluon-offline-notifier" -p 5 "Gateway TQ is $GATEWAY_TQ node is online"
+	uci set wireless.client_radio0_offline=wifi-iface
+	uci set wireless.client_radio0_offline.network='client'
+	uci set wireless.client_radio0_offline.device='radio0'
+	uci set wireless.client_radio0_offline.mode='ap'
+	uci set wireless.client_radio0_offline.ssid="${OFFLINE_SSID}"
+	uci set wireless.client_radio0_offline.disabled='1'
+	uci commit wireless.client_radio0_offline
+	wifi
 fi
 
 if [ $GATEWAY_TQ -lt $LOWER_LIMIT ];
 then
-	echo "Gateway TQ is $GATEWAY_TQ node is considered offline"
-	for HOSTAPD in $(ls /var/run/hostapd-phy*); do # check status for all physical devices
-		CURRENT_SSID="$(grep "^ssid=$OFFLINE_SSID" $HOSTAPD | cut -d"=" -f2)"
-		if [ "X$CURRENT_SSID" == "X$OFFLINE_SSID" ]
-		then
-			echo "SSID $CURRENT_SSID is correct, noting to do"
-			HUP_NEEDED=0
-			break
-		fi
-		CURRENT_SSID="$(grep "^ssid=$ONLINE_SSID" $HOSTAPD | cut -d"=" -f2)"
-		if [ "$CURRENT_SSID" == "$ONLINE_SSID" ]
-		then
-			logger -s -t "gluon-offline-ssid" -p 5 "TQ is $GATEWAY_TQ, SSID is $CURRENT_SSID, change to $OFFLINE_SSID"
-			sed -i "s~^ssid=$ONLINE_SSID~ssid=$OFFLINE_SSID~" $HOSTAPD
-			HUP_NEEDED=1 # HUP here would be too early for dualband devices
-		else
-			echo "There is something wrong: did not find SSID '$ONLINE_SSID' nor '$OFFLINE_SSID'"
-		fi
-	done
+	logger -s -t "gluon-offline-notifier" -p 5  "Gateway TQ is $GATEWAY_TQ node is considered offline"
+	uci set wireless.client_radio0_offline=wifi-iface
+	uci set wireless.client_radio0_offline.network='client'
+	uci set wireless.client_radio0_offline.device='radio0'
+	uci set wireless.client_radio0_offline.mode='ap'
+	uci set wireless.client_radio0_offline.ssid="${OFFLINE_SSID}"
+	uci set wireless.client_radio0_offline.disabled='0'
+	uci commit wireless.client_radio0_offline
+	wifi
 fi
 
 if [ $GATEWAY_TQ -ge $LOWER_LIMIT -a $GATEWAY_TQ -le $UPPER_LIMIT ]; # this is just get a clean run if we are in-between the grace periode
