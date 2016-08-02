@@ -6,8 +6,8 @@ ONLINE_SSID=$(uci get wireless.client_radio0.ssid -q)
 : ${ONLINE_SSID:=FREIFUNK}   # if for whatever reason ONLINE_SSID is NULL
 OFFLINE_PREFIX='FF_OFFLINE_' # Use something short to leave space for the nodename
 
-UPPER_LIMIT='41' # Above this limit the online SSID will be used
-LOWER_LIMIT='35' # Below this limit the offline SSID will be used
+UPPER_LIMIT='55' # Above this limit the online SSID will be used
+LOWER_LIMIT='45' # Below this limit the offline SSID will be used
 # In-between these two values the SSID will never be changed to preven it from toggeling every Minute.
 
 # Generate an Offline SSID with the first and last Part of the nodename to allow owner to recognise wich node is down
@@ -67,7 +67,7 @@ then
 		then
 			logger -s -t "gluon-offline-ssid" -p 5 "TQ is $GATEWAY_TQ, SSID is $CURRENT_SSID, change to $OFFLINE_SSID"
 			sed -i "s~^ssid=$ONLINE_SSID~ssid=$OFFLINE_SSID~" $HOSTAPD
-			HUP_NEEDED=1 # HUP here would be to early for dualband devices
+			HUP_NEEDED=1 # HUP here would be too early for dualband devices
 		else
 			echo "There is something wrong: did not find SSID '$ONLINE_SSID' nor '$OFFLINE_SSID'"
 		fi
