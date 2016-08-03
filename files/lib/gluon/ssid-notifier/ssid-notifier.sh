@@ -23,45 +23,49 @@ fi
 #is there an active gateway?
 GATEWAY_TQ=$(batctl gwl | grep "^=>" | awk -F '[()]' '{print $2}' | tr -d " ") # grep the connection quality of the currently used gateway
 
-if [ ! $GATEWAY_TQ ]; # if there is no gateway there will be errors in the following if clauses
-then
-	GATEWAY_TQ=0 # just an easy way to get a valid value if there is no gateway
+OI=wireless.client_radio0_offline
+
+IF_EXISTS=$(uci get $OI -q)
+
+if [ ! $IF_EXISTS ]; then
+	uci set $OI=wifi-iface
+	uci set $OI.network='client'
+	uci set $OI.device='radio0'
+	uci set $OI.mode='ap'
+	uci set $OI.disabled='1'
+	uci set $OI.ssid="${OFFLINE_SSID}"
 fi
 
-if [ $GATEWAY_TQ -gt $UPPER_LIMIT ];
-then
-	logger -s -t "gluon-offline-notifier" -p 5 "Gateway TQ is $GATEWAY_TQ node is online"
-	uci set wireless.client_radio0_offline=wifi-iface
-	uci set wireless.client_radio0_offline.network='client'
-	uci set wireless.client_radio0_offline.device='radio0'
-	uci set wireless.client_radio0_offline.mode='ap'
-	uci set wireless.client_radio0_offline.ssid="${OFFLINE_SSID}"
-	uci set wireless.client_radio0_offline.disabled='1'
-	uci commit wireless.client_radio0_offline
-	wifi
-fi
+DISABLED=$(uci get $OI.disabled -q)
+HUP_NEEDED=0
 
-if [ $GATEWAY_TQ -lt $LOWER_LIMIT ];
-then
-	logger -s -t "gluon-offline-notifier" -p 5  "Gateway TQ is $GATEWAY_TQ node is considered offline"
-	uci set wireless.client_radio0_offline=wifi-iface
-	uci set wireless.client_radio0_offline.network='client'
-	uci set wireless.client_radio0_offline.device='radio0'
-	uci set wireless.client_radio0_offline.mode='ap'
-	uci set wireless.client_radio0_offline.ssid="${OFFLINE_SSID}"
-	uci set wireless.client_radio0_offline.disabled='0'
-	uci commit wireless.client_radio0_offline
-	wifi
-fi
-
-if [ $GATEWAY_TQ -ge $LOWER_LIMIT -a $GATEWAY_TQ -le $UPPER_LIMIT ]; # this is just get a clean run if we are in-between the grace periode
-then
-	echo "TQ is $GATEWAY_TQ, do nothing"
-	HUP_NEEDED=0
+if [ ! $GATEWAY_TQ ]; then
+	echo "TQ: '$GATEWAY_TQ', wifi still running? do nothing"
+elif [ $GATEWAY_TQ -ge $LOWER_LIMIT -a $GATEWAY_TQ -le $UPPER_LIMIT ]; then 
+	# this is just get a clean run if we are in-between the grace periode
+	echo "TQ: $GATEWAY_TQ, this is between $LOWER_LIMIT and $UPPER_LIMIT; do nothing"
+elif [ $GATEWAY_TQ -gt $UPPER_LIMIT ]; then
+	if [ $DISABLED == 1 ]; then
+		echo "Gateway TQ: $GATEWAY_TQ; node is still online"
+	else
+		logger -s -t "ssid-notifier" -p 5 "Gateway TQ is $GATEWAY_TQ node changed to online"
+		uci set $OI.disabled='1'
+		uci commit $OI
+		HUP_NEEDED=1
+	fi
+else
+	if [ $DISABLED == 0 ]; then
+		echo "Gateway TQ: $GATEWAY_TQ; node is still considered offline"
+	else
+		logger -s -t "ssid-notifier" -p 5 "Gateway TQ is $GATEWAY_TQ node is considered offline"
+		uci set $OI.disabled='0'
+		uci commit $OI
+		HUP_NEEDED=1
+	fi
 fi
 
 if [ $HUP_NEEDED == 1 ]; then
-	killall -HUP hostapd # send HUP to all hostapd to load the new SSID
+	wifi
 	HUP_NEEDED=0
 	echo "HUP!"
 fi
