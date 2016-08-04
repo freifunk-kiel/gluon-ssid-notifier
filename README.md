@@ -9,7 +9,7 @@ Create a file "modules" with the following content in your <a href="https://gith
 
 GLUON_SITE_FEEDS="ssidnotifier"<br>
 PACKAGES_SSIDNOTIFIER_REPO=https://github.com/rubo77/gluon-ssid-changer<br>
-PACKAGES_SSIDNOTIFIER_COMMIT=84691ba0b6fd70bbe44230e3e922584e37a90fcc<br>
+PACKAGES_SSIDNOTIFIER_COMMIT=0123456789abcdef0123456789abcdef01234567<--hier die aktuelle commit ID aus dem Repository eintragen<br>
 PACKAGES_SSIDNOTIFIER_BRANCH=ssid-notifier<br>
 
 With this done you can add the package `gluon-ssid-notifier` to your `site.mk`
