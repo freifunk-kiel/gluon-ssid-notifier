@@ -1,9 +1,12 @@
 #!/bin/sh
 
-OFFLINE_PREFIX='FF kein Netz:' # use something short to leave space for the nodename (no "/" allowed!)
+# use something short to leave space for the nodename (no "/" allowed!)
+OFFLINE_PREFIX='FF kein Netz:'
 
-UPPER_LIMIT='55' # Above this limit the offline SSID will be off
-LOWER_LIMIT='45' # Below this limit the offline SSID will be on
+# Above this limit the offline SSID will be off
+UPPER_LIMIT='55'
+# Below this limit the offline SSID will be on
+LOWER_LIMIT='45'
 # In-between these two values the SSID will never be changed. prevents from toggeling every cron call
 
 HOSTAPD=/var/run/hostapd-phy0.conf
@@ -15,7 +18,8 @@ if [ "$?" == "1" ]; then
 	exit
 fi
 
-TQ=$(echo "$GWL" | grep "^=>" | awk -F '[()]' '{print $2}' | tr -d " ") # connection quality of the currently used gateway
+# connection quality of the currently used gateway
+TQ=$(echo "$GWL" | grep "^=>" | awk -F '[('')]' '{print $2}' | tr -d " ")
 if [ ! $TQ ]; then
 	echo "TQ: '$TQ', wifi still running? do nothing"
 	exit
@@ -29,10 +33,13 @@ IF_EXISTS=$(uci get -q $OI)
 NODENAME=`uname -n`
 if [ ${#NODENAME} -gt $((32 - ${#OFFLINE_PREFIX})) ] ; then
 	HALF=$(( (30 - ${#OFFLINE_PREFIX} ) / 2 ))
-	SKIP=$(( ${#NODENAME} - $HALF )) # jump to this character for the last part of the name
-	OFFLINE_SSID="${OFFLINE_PREFIX}${NODENAME:0:$HALF}..${NODENAME:$SKIP:${#NODENAME}}" # start .. end
+	# jump to this character for the last part of the name
+	SKIP=$(( ${#NODENAME} - $HALF ))
+	# start .. end
+	OFFLINE_SSID="${OFFLINE_PREFIX}${NODENAME:0:$HALF}..${NODENAME:$SKIP:${#NODENAME}}"
 else
-	OFFLINE_SSID="${OFFLINE_PREFIX}${NODENAME}" # full nodename
+	# full nodename
+	OFFLINE_SSID="${OFFLINE_PREFIX}${NODENAME}"
 fi
 
 if [ ! $IF_EXISTS ]; then
@@ -90,7 +97,8 @@ else
 fi
 
 if [ $HUP_NEEDED == 1 ]; then
-	killall -SIGHUP hostapd # Send HUP to all hostapd um die neue SSID zu laden
+	# Send HUP to all hostapd um die neue SSID zu laden
+	killall -SIGHUP hostapd
 	HUP_NEEDED=0
 	echo "SIGHUP!"
 fi

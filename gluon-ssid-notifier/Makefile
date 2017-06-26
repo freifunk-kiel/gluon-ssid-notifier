@@ -32,6 +32,7 @@ endef
 
 define Package/gluon-ssid-notifier/install
 	$(CP) ./files/* $(1)/
+	./gluonShellDiet.sh $(1)/lib/gluon/ssid-notifier/ssid-notifier.sh
 endef
 
 $(eval $(call BuildPackage,gluon-ssid-notifier))
