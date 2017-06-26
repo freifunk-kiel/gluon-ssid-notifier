@@ -25,7 +25,7 @@ elif [ $TQ -ge ${LOWER_LIMIT} -a $TQ -le ${UPPER_LIMIT} ]; then
 	exit
 fi
 
-IF_EXISTS=$(uci get $OI -q)
+IF_EXISTS=$(uci get -q $OI)
 NODENAME=`uname -n`
 if [ ${#NODENAME} -gt $((32 - ${#OFFLINE_PREFIX})) ] ; then
 	HALF=$(( (30 - ${#OFFLINE_PREFIX} ) / 2 ))
@@ -43,13 +43,13 @@ if [ ! $IF_EXISTS ]; then
 	uci set $OI.disabled='1'
 	uci set $OI.ssid="${OFFLINE_SSID}"
 	uci commit $OI; wifi; exit
-elif [ "$(uci get $OI.ssid -q)" != "${OFFLINE_SSID}" ]; then
+elif [ "$(uci get -q $OI.ssid)" != "${OFFLINE_SSID}" ]; then
 	#hostname changed
 	uci set $OI.ssid="${OFFLINE_SSID}"
 	uci commit $OI; wifi; exit
 fi
 
-OI_IS_DISABLED=$(uci get $OI.disabled -q)
+OI_IS_DISABLED=$(uci get -q $OI.disabled)
 LINE_IN_HOSTAPD=$(grep -n "ssid=${OFFLINE_SSID}" ${HOSTAPD} | cut -d':' -f1)
 if [ "${LINE_IN_HOSTAPD}" == "" ]; then
 	echo "the offline SSID is not in hostapd file"
