@@ -1,1 +1,1 @@
-* * * * * sleep 180 & /lib/gluon/ssid-notifier/ssid-notifier.sh
+* * * * * /lib/gluon/ssid-notifier/ssid-notifier.sh
