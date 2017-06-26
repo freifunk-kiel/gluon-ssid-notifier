@@ -18,4 +18,4 @@ With this done you can add the package `gluon-ssid-notifier` to your `site.mk`
 
 ### Dependencies
 
-Gluon 2016.1, based on openwrt chaos-calmer
+Gluon 2017.1, based on lede.

@@ -5,7 +5,7 @@ PKG_VERSION:=0.1
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
-include $(INCLUDE_DIR)/package.mk
+include $(TOPDIR)/../package/gluon.mk
 
 define Package/gluon-ssid-notifier
   SECTION:=gluon
