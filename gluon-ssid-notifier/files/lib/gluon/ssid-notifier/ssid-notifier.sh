@@ -1,5 +1,16 @@
 #!/bin/sh
 
+#################
+# safety checks #
+#################
+safety_exit() {
+	echo $1, exiting with error code 2
+	exit 2
+}
+pgrep -f autoupdater >/dev/null && safety_exit 'autoupdater running'
+[ $(cat /proc/uptime | sed 's/\..*//g') -gt 180 ] || safety_exit 'less than 3 minutes'
+[ $(find /var/run -name hostapd-phy* | wc -l) -gt 0 ] || safety_exit 'no hostapd-phy*'
+
 # use something short to leave space for the nodename (no "/" allowed!)
 OFFLINE_PREFIX='FF kein Netz:'
 
